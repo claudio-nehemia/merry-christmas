@@ -6,12 +6,56 @@ import { Heart, Sparkles, Gift, Star } from 'lucide-react';
 const ChristmasLandingPage = () => {
   const [scrollY, setScrollY] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [currentWish, setCurrentWish] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = React.useRef<HTMLAudioElement>(null);
+
+  const wishes = [
+    {
+      text: "Every moment with you feels like a gift I never want to lose. You're the reason this holiday feels so magical.",
+      subtext: "Thank you for being the greatest gift I've ever received."
+    },
+    {
+      text: "You light up my world brighter than a thousand Christmas lights. Your smile is the star on top of my tree.",
+      subtext: "With you, every season feels like Christmas."
+    },
+    {
+      text: "In this winter wonderland, you're the warmth that keeps my heart glowing. You make even the coldest days feel magical.",
+      subtext: "You're my favorite Christmas miracle."
+    },
+    {
+      text: "All I want for Christmas is more moments with you. Every laugh, every hug, every memory we create together.",
+      subtext: "You make my life a beautiful celebration."
+    },
+    {
+      text: "You've wrapped my heart in love and joy. Being with you is better than opening all the presents in the world.",
+      subtext: "You're the answer to all my Christmas wishes."
+    }
+  ];
 
   useEffect(() => {
     setIsVisible(true);
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    const wishInterval = setInterval(() => {
+      setCurrentWish((prev) => (prev + 1) % wishes.length);
+    }, 5000);
+    
+    // Auto play music on load
+    if (audioRef.current) {
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch((error) => {
+        // Browser might block autoplay, user needs to click
+        console.log("Autoplay blocked, user needs to click play button");
+      });
+    }
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearInterval(wishInterval);
+    };
   }, []);
 
   const photos = [
@@ -33,8 +77,40 @@ const ChristmasLandingPage = () => {
     setLoadedImages(prev => ({ ...prev, [src]: true }));
   };
 
+  const toggleMusic = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-900 via-red-700 to-red-900 overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-red-900 via-blue-900 to-red-800 overflow-x-hidden">
+      {/* Audio Player - Hidden but functional */}
+      <audio ref={audioRef} loop>
+        <source src="your-song.mp3" type="audio/mpeg" />
+      </audio>
+
+      {/* Music Control Button - Fixed position */}
+      <button
+        onClick={toggleMusic}
+        className="fixed top-6 right-6 z-50 bg-gradient-to-br from-blue-600 to-red-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 border-2 border-white border-opacity-30"
+        aria-label={isPlaying ? "Pause music" : "Play music"}
+      >
+        {isPlaying ? (
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+        ) : (
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+          </svg>
+        )}
+      </button>
       {/* Animated Background Elements */}
       <div className="fixed inset-0 pointer-events-none">
         {[...Array(30)].map((_, i) => (
@@ -48,7 +124,7 @@ const ChristmasLandingPage = () => {
               animationDuration: `${2 + Math.random() * 3}s`
             }}
           >
-            <Star className="text-red-300 opacity-30" size={Math.random() * 20 + 10} />
+            <Star className="text-blue-300 opacity-40" size={Math.random() * 20 + 10} />
           </div>
         ))}
       </div>
@@ -98,14 +174,45 @@ const ChristmasLandingPage = () => {
               <Heart className="text-pink-400 w-12 h-12 absolute -right-16 top-1/2 transform -translate-y-1/2 animate-pulse" />
             </div>
 
-            <div className="max-w-3xl mx-auto mt-12 space-y-6">
-              <p className="text-xl md:text-2xl text-white leading-relaxed font-light px-4 bg-red-800 bg-opacity-40 backdrop-blur-sm rounded-2xl py-8 border-2 border-red-300 border-opacity-30 shadow-2xl transform hover:scale-105 transition-transform duration-300">
-                Every moment with you feels like a gift I never want to lose. 
-                You're the reason this holiday feels so magical. 
-                <span className="block mt-4 text-red-200">
-                  Thank you for being the greatest gift I've ever received.
-                </span>
-              </p>
+            <div className="max-w-3xl mx-auto mt-12 space-y-6 relative">
+              {/* Wish Cards Carousel */}
+              <div className="relative h-64 overflow-hidden">
+                {wishes.map((wish, index) => (
+                  <div
+                    key={index}
+                    className={`absolute inset-0 transition-all duration-1000 transform ${
+                      index === currentWish 
+                        ? 'opacity-100 translate-x-0' 
+                        : index < currentWish 
+                        ? 'opacity-0 -translate-x-full' 
+                        : 'opacity-0 translate-x-full'
+                    }`}
+                  >
+                    <div className="text-xl md:text-2xl text-white leading-relaxed font-light px-4 bg-gradient-to-br from-blue-800 via-red-800 to-blue-900 bg-opacity-60 backdrop-blur-sm rounded-2xl py-8 border-2 border-blue-400 border-opacity-40 shadow-2xl h-full flex flex-col justify-center">
+                      <p>{wish.text}</p>
+                      <span className="block mt-4 text-blue-200">
+                        {wish.subtext}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Wish Indicators */}
+              <div className="flex justify-center gap-2 mt-6">
+                {wishes.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentWish(index)}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index === currentWish 
+                        ? 'bg-blue-400 w-8' 
+                        : 'bg-blue-300 bg-opacity-50 hover:bg-opacity-80'
+                    }`}
+                    aria-label={`Go to wish ${index + 1}`}
+                  />
+                ))}
+              </div>
 
               <div className="flex justify-center gap-4 mt-8">
                 <Gift className="text-blue-300 w-10 h-10 animate-bounce" style={{ animationDelay: '0.2s' }} />
@@ -167,7 +274,7 @@ const ChristmasLandingPage = () => {
                     )}
 
                     {/* Overlay on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-red-900 via-transparent to-transparent opacity-0 group-hover:opacity-90 transition-opacity duration-300 flex items-end justify-center pb-8">
+                    <div className="absolute inset-0 bg-gradient-to-t from-blue-900 via-transparent to-transparent opacity-0 group-hover:opacity-90 transition-opacity duration-300 flex items-end justify-center pb-8">
                       <Heart className="text-pink-300 w-12 h-12 animate-pulse" />
                     </div>
                   </div>
@@ -180,17 +287,17 @@ const ChristmasLandingPage = () => {
         {/* Message Section */}
         <section className="min-h-screen flex items-center justify-center px-4 py-20">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-3xl p-12 border-2 border-white border-opacity-20 shadow-2xl transform hover:scale-105 transition-transform duration-300">
+            <div className="bg-gradient-to-br from-blue-900 via-red-900 to-blue-800 bg-opacity-30 backdrop-blur-lg rounded-3xl p-12 border-2 border-blue-400 border-opacity-30 shadow-2xl transform hover:scale-105 transition-transform duration-300">
               <Sparkles className="text-yellow-300 w-16 h-16 mx-auto mb-8 animate-spin" style={{ animationDuration: '4s' }} />
               
               <p className="text-2xl md:text-3xl text-white leading-relaxed mb-8 font-light">
                 You make me feel like every day is Christmas morning - 
-                <span className="block mt-4 text-blue-500 font-normal">
+                <span className="block mt-4 text-blue-400 font-normal">
                   excited, happy, and believing in magic.
                 </span>
               </p>
 
-              <p className="text-xl md:text-2xl text-red-500 leading-relaxed mb-8">
+              <p className="text-xl md:text-2xl text-red-300 leading-relaxed mb-8">
                 Being with you is the best gift of all. 
                 As long as I have you, my Christmas will always be merry and bright.
               </p>
